@@ -40,12 +40,18 @@
              %xlate(x'00' + x'25' + x'0D' + x'05':'    ':gInputFile.RtvData);
            
            gSQLLine.Data = %Trim(gInputFile.RtvData);
-           If (%Subst(gSQLLine.Data:1:8) = 'EXEC SQL');
-             gSQLLine.SQL = %Subst(gSQLLine.Data:10);
-             BarrySQL_Parse();
+           If (%Len(gSQLLine.Data) >= 8);
+             If (%Subst(gSQLLine.Data:1:8) = 'EXEC SQL');
+               gSQLLine.SQL = %Subst(gSQLLine.Data:10);
+               BarrySQL_Parse();
+             Else;
+               BarrySQL_WriteTemp(gInputFile.RtvData);
+             Endif;
            Else;
              BarrySQL_WriteTemp(gInputFile.RtvData);
            Endif;
+           
+           gInputFile.RtvData = '';
          Enddo;
          
          CloseFile(gInputFile.FilePtr);
@@ -95,6 +101,7 @@
        //************************************
        
        Dcl-Proc BarrySQL_Parse;
+         Dcl-S lIndex Int(3) Inz(1);
          BarrySQL_CreatePieces();
          
          Select;
@@ -102,8 +109,8 @@
              If (gSQLLine.Pieces(2) = 'DS');
                BarrySQL_WriteTemp('        Dcl-S env Int(10);');
                BarrySQL_WriteTemp('        Dcl-S hdl Int(10);');
+               BarrySQL_WriteTemp('        Dcl-S rlen Int(10);');
                BarrySQL_WriteTemp('        Dcl-S stmt Int(10) Dim(10) Inz(0);');
-               DSPLY ('Defining special DS');
              Endif;
              If (gSQLLine.Pieces(2) = 'HEADERS');
                BarrySQL_WriteTemp('       /COPY ''SQLCLI.h''');
@@ -114,7 +121,6 @@
              BarrySQL_WriteTemp('        SQLConnect(hdl:'     
                                + '''' + gSQLLine.Pieces(2) + '''' + 
                                ':SQL_NTS:0:SQL_NTS:0:SQL_NTS);');
-             DSPLY ('Connect found');
            When (gSQLLine.Pieces(1) = 'SELECT');
              gCurrentSQLStmt += 1;
              BarrySQL_WriteTemp('        SQLAllocStmt(hdl' + 
@@ -123,16 +129,24 @@
              BarrySQL_WriteTemp('        SQLExecDirect(' + 
                                 'stmt(' + %Char(gCurrentSQLStmt) + '):' +
                                 '''' + gSQLLine.SQL + ''':SQL_NTS);');
-             DSPLY ('Select statement found');
            When (gSQLLine.Pieces(1) = 'FETCH');
-             BarrySQL_WriteTemp('        //DOING FETCH!!');
-             DSPLY ('Fetch found');
+             If (gSQLLine.Pieces(2) = 'INTO');
+               BarrySQL_WriteTemp('        SQLFetch(stmt('
+                                  + %Char(gCurrentSQLStmt) + ');');
+               
+               lIndex = 3;
+               Dow (gSQLLine.Pieces(lIndex) <> '');
+                 BarrySQL_WriteTemp('        SQLGetCol('
+                                  + %Char(gCurrentSQLStmt) + ':'
+                                  + %Char(lIndex - 2) + ':SQL_DEFAULT:'
+                                  + '%Addr(' + gSQLLine.Pieces(lIndex) + '):'
+                                  + '%Size(' + gSQLLine.Pieces(lIndex) + '):'
+                                  + '%Addr(rlen));');
+                 lIndex += 1;
+               Enddo;
+             Endif;
            When (gSQLLine.Pieces(1) = 'CLOSE');
-             BarrySQL_WriteTemp('        //DOING CLOSE!!');
-             DSPLY ('Close found');
            When (gSQLLine.Pieces(1) = 'DISCONNECT');
-             BarrySQL_WriteTemp('        //DOING DISCONNECT!!');
-             DSPLY ('Disconnect found');
          Endsl;
        End-Proc;
        
