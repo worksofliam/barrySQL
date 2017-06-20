@@ -142,6 +142,8 @@
          gOutFile.OpenMode = 'w' + x'00';
          gOutFile.FilePtr  = OpenFile(%addr(gOutFile.PathFile)
                                      :%addr(gOutFile.OpenMode));
+                                     
+         DSPLY ('Output file created');
        End-Proc;
        
        Dcl-Proc BarrySQL_WriteTemp;
