@@ -146,7 +146,15 @@
                Enddo;
              Endif;
            When (gSQLLine.Pieces(1) = 'CLOSE');
+             BarrySQL_WriteTemp('        SQLCloseCursor(' 
+                               + 'stmt(' + %Char(gCurrentSQLStmt) + '));');
+             BarrySQL_WriteTemp('        SQLFreeStmt('
+                               + 'stmt(' + %Char(gCurrentSQLStmt) + '):'
+                               + 'SQL_CLOSE);');
            When (gSQLLine.Pieces(1) = 'DISCONNECT');
+             BarrySQL_WriteTemp('        SQLDisconnect(hdl);');
+             BarrySQL_WriteTemp('        SQLFreeConnect(hdl);');
+             BarrySQL_WriteTemp('        SQLFreeEnv(env);');
          Endsl;
        End-Proc;
        
