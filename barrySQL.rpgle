@@ -1,5 +1,6 @@
 
        Ctl-Opt DFTACTGRP(*No);
+       //Goodbye world!!
        
       /copy 'headers.rpgle'
        
