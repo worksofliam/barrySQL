@@ -121,35 +121,35 @@
          Select;
            When (gSQLLine.Pieces(1) = 'DEFINE');
              If (gSQLLine.Pieces(2) = 'FIELDS');
-               BarrySQL_WriteTemp('        Dcl-S env Int(10);');
-               BarrySQL_WriteTemp('        Dcl-S hdl Int(10);');
-               BarrySQL_WriteTemp('        Dcl-S rlen Int(10);');
-               BarrySQL_WriteTemp('        Dcl-S usr char(10) inz(*user);');
-               BarrySQL_WriteTemp('        Dcl-S sqltrue like(SQLINTEGER_t) '
+               BarrySQL_WriteTemp('Dcl-S env Int(10);');
+               BarrySQL_WriteTemp('Dcl-S hdl Int(10);');
+               BarrySQL_WriteTemp('Dcl-S rlen Int(10);');
+               BarrySQL_WriteTemp('Dcl-S usr char(10) inz(*user);');
+               BarrySQL_WriteTemp('Dcl-S sqltrue like(SQLINTEGER_t) '
                                   + 'inz(SQL_TRUE);');
-               BarrySQL_WriteTemp('        Dcl-S sqlreturn '
+               BarrySQL_WriteTemp('Dcl-S sqlreturn '
                                          + 'like(SQLRETCODE_t);');
-               BarrySQL_WriteTemp('        Dcl-S stmt Int(10) Dim(10) Inz(0);');
+               BarrySQL_WriteTemp('Dcl-S stmt Int(10) Dim(10) Inz(0);');
              Endif;
              If (gSQLLine.Pieces(2) = 'HEADERS');
                BarrySQL_WriteTemp('       /COPY ''SQLCLI.h''');
              Endif;
              
            When (gSQLLine.Pieces(1) = 'CONNECT');
-             BarrySQL_WriteTemp('        SQLAllocEnv(%Addr(env));');
-             BarrySQL_WriteTemp('        SQLAllocConnect(env:%Addr(hdl));');
-             BarrySQL_WriteTemp('        sqlreturn = SQLConnect(hdl:'     
+             BarrySQL_WriteTemp('SQLAllocEnv(%Addr(env));');
+             BarrySQL_WriteTemp('SQLAllocConnect(env:%Addr(hdl));');
+             BarrySQL_WriteTemp('sqlreturn = SQLConnect(hdl:'     
                                + '''' + gSQLLine.Pieces(2) + '''' + 
                                ':SQL_NTS:usr:SQL_NTS:'''':SQL_NTS);');
-             BarrySQL_WriteTemp('        SQLSetConnectAttr(hdl:' + 
+             BarrySQL_WriteTemp('SQLSetConnectAttr(hdl:' + 
                                 'SQL_ATTR_DBC_SYS_NAMING:%Addr(sqltrue):0);');
                                 
            When (gSQLLine.Pieces(1) = 'SELECT');
              gCurrentSQLStmt += 1;
-             BarrySQL_WriteTemp('        SQLAllocStmt(hdl' + 
+             BarrySQL_WriteTemp('SQLAllocStmt(hdl' + 
                                 ':%Addr(stmt(' + %Char(gCurrentSQLStmt)
                                  + ')));');
-             BarrySQL_WriteTemp('        sqlreturn = SQLExecDirect(' + 
+             BarrySQL_WriteTemp('sqlreturn = SQLExecDirect(' + 
                                 'stmt(' + %Char(gCurrentSQLStmt) + '):' +
                                 '''' + gSQLLine.SQL + ''':SQL_NTS);');
                                 
@@ -157,13 +157,13 @@
                  gSQLLine.Pieces(1) = 'DELETE' OR
                  gSQLLine.Pieces(1) = 'CREATE');
              gCurrentSQLStmt += 1;
-             BarrySQL_WriteTemp('        SQLAllocStmt(hdl' + 
+             BarrySQL_WriteTemp('SQLAllocStmt(hdl' + 
                                 ':%Addr(stmt(' + %Char(gCurrentSQLStmt)
                                  + ')));');
-             BarrySQL_WriteTemp('        sqlreturn = SQLExecDirect(' + 
+             BarrySQL_WriteTemp('sqlreturn = SQLExecDirect(' + 
                                 'stmt(' + %Char(gCurrentSQLStmt) + '):' +
                                 '''' + gSQLLine.SQL + ''':SQL_NTS);');
-             BarrySQL_WriteTemp('        SQLFreeStmt('
+             BarrySQL_WriteTemp('SQLFreeStmt('
                                + 'stmt(' + %Char(gCurrentSQLStmt) + '):'
                                + 'SQL_CLOSE);');
              gCurrentSQLStmt -= 1;
@@ -171,13 +171,13 @@
                                 
            When (gSQLLine.Pieces(1) = 'FETCH');
              If (gSQLLine.Pieces(2) = 'INTO');
-               BarrySQL_WriteTemp('        sqlreturn = SQLFetch(stmt('
+               BarrySQL_WriteTemp('sqlreturn = SQLFetch(stmt('
                                   + %Char(gCurrentSQLStmt) + '));');
                
                lIndex = 3;
                Dow (gSQLLine.Pieces(lIndex) <> '');
                  If (gSQLLine.Pieces(lIndex) <> '*OMIT');
-                   BarrySQL_WriteTemp('        SQLGetCol(stmt('
+                   BarrySQL_WriteTemp('SQLGetCol(stmt('
                                     + %Char(gCurrentSQLStmt) + '):'
                                     + %Char(lIndex - 2) + ':SQL_DEFAULT:'
                                     + '%Addr(' + gSQLLine.Pieces(lIndex) + '):'
@@ -189,24 +189,24 @@
              Endif;
              
            When (gSQLLine.Pieces(1) = 'CLOSE');
-             BarrySQL_WriteTemp('        SQLCloseCursor(' 
+             BarrySQL_WriteTemp('SQLCloseCursor(' 
                                + 'stmt(' + %Char(gCurrentSQLStmt) + '));');
-             BarrySQL_WriteTemp('        SQLFreeStmt('
+             BarrySQL_WriteTemp('SQLFreeStmt('
                                + 'stmt(' + %Char(gCurrentSQLStmt) + '):'
                                + 'SQL_CLOSE);');
              gCurrentSQLStmt -= 1;
                                
            When (gSQLLine.Pieces(1) = 'DISCONNECT');
-             BarrySQL_WriteTemp('        SQLDisconnect(hdl);');
-             BarrySQL_WriteTemp('        SQLFreeConnect(hdl);');
-             BarrySQL_WriteTemp('        SQLFreeEnv(env);');
+             BarrySQL_WriteTemp('SQLDisconnect(hdl);');
+             BarrySQL_WriteTemp('SQLFreeConnect(hdl);');
+             BarrySQL_WriteTemp('SQLFreeEnv(env);');
              
            When (gSQLLine.Pieces(1) = 'EXECUTE');
              gCurrentSQLStmt += 1;
-             BarrySQL_WriteTemp('        SQLAllocStmt(hdl' + 
+             BarrySQL_WriteTemp('SQLAllocStmt(hdl' + 
                                 ':%Addr(stmt(' + %Char(gCurrentSQLStmt)
                                  + ')));');
-             BarrySQL_WriteTemp('        sqlreturn = SQLExecDirect(' + 
+             BarrySQL_WriteTemp('sqlreturn = SQLExecDirect(' + 
                                 'stmt(' + %Char(gCurrentSQLStmt) + '):' +
                                 gSQLLine.Pieces(2) + ':SQL_NTS);');
              
