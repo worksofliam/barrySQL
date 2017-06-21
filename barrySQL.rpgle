@@ -131,6 +131,7 @@
              If (gSQLLine.Pieces(2) = 'HEADERS');
                BarrySQL_WriteTemp('       /COPY ''SQLCLI.h''');
              Endif;
+             
            When (gSQLLine.Pieces(1) = 'CONNECT');
              BarrySQL_WriteTemp('        SQLAllocEnv(%Addr(env));');
              BarrySQL_WriteTemp('        SQLAllocConnect(env:%Addr(hdl));');
@@ -139,6 +140,7 @@
                                ':SQL_NTS:usr:SQL_NTS:'''':SQL_NTS);');
              BarrySQL_WriteTemp('        SQLSetConnectAttr(hdl:' + 
                                 'SQL_ATTR_DBC_SYS_NAMING:%Addr(sqltrue):0);');
+                                
            When (gSQLLine.Pieces(1) = 'SELECT'); 
              gCurrentSQLStmt += 1;
              BarrySQL_WriteTemp('        SQLAllocStmt(hdl' + 
@@ -147,6 +149,7 @@
              BarrySQL_WriteTemp('        sqlreturn = SQLExecDirect(' + 
                                 'stmt(' + %Char(gCurrentSQLStmt) + '):' +
                                 '''' + gSQLLine.SQL + ''':SQL_NTS);');
+                                
            When (gSQLLine.Pieces(1) = 'FETCH');
              If (gSQLLine.Pieces(2) = 'INTO');
                BarrySQL_WriteTemp('        sqlreturn = SQLFetch(stmt('
@@ -154,21 +157,25 @@
                
                lIndex = 3;
                Dow (gSQLLine.Pieces(lIndex) <> '');
-                 BarrySQL_WriteTemp('        SQLGetCol(stmt('
-                                  + %Char(gCurrentSQLStmt) + '):'
-                                  + %Char(lIndex - 2) + ':SQL_DEFAULT:'
-                                  + '%Addr(' + gSQLLine.Pieces(lIndex) + '):'
-                                  + '%Size(' + gSQLLine.Pieces(lIndex) + '):'
-                                  + '%Addr(rlen));');
+                 If (gSQLLine.Pieces(lIndex) <> '*OMIT');
+                   BarrySQL_WriteTemp('        SQLGetCol(stmt('
+                                    + %Char(gCurrentSQLStmt) + '):'
+                                    + %Char(lIndex - 2) + ':SQL_DEFAULT:'
+                                    + '%Addr(' + gSQLLine.Pieces(lIndex) + '):'
+                                    + '%Size(' + gSQLLine.Pieces(lIndex) + '):'
+                                    + '%Addr(rlen));');
+                 Endif;
                  lIndex += 1;
                Enddo;
              Endif;
+             
            When (gSQLLine.Pieces(1) = 'CLOSE');
              BarrySQL_WriteTemp('        SQLCloseCursor(' 
                                + 'stmt(' + %Char(gCurrentSQLStmt) + '));');
              BarrySQL_WriteTemp('        SQLFreeStmt('
                                + 'stmt(' + %Char(gCurrentSQLStmt) + '):'
                                + 'SQL_CLOSE);');
+                               
            When (gSQLLine.Pieces(1) = 'DISCONNECT');
              BarrySQL_WriteTemp('        SQLDisconnect(hdl);');
              BarrySQL_WriteTemp('        SQLFreeConnect(hdl);');
