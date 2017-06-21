@@ -1,13 +1,14 @@
 
        Ctl-Opt DFTACTGRP(*No);
-       //Goodbye world!!
        
       /copy 'headers.rpgle'
        
        Dcl-Pi BARRYSQL;
+         gObj Char(21);
          gIFS Char(128);
        End-Pi;
        
+       Dcl-S  gCmdRes    Int(3);
        Dcl-Ds gInputFile LikeDS(File_Temp);
        Dcl-Ds gOutFile   LikeDS(File_Temp);
        Dcl-Ds gSQLLine Qualified;
@@ -61,6 +62,15 @@
          DSPLY ('Unable to open file.');
        Endif;
        
+       gCmdRes = Cmd('CRTBNDRPG PGM(' + %Trim(gObj) + ') SRCSTMF('''
+         + %Trim(gIFS) + 'brysql'') OPTION(*EVENTF) DBGVIEW(*SOURCE)');
+         
+       If (gCmdRes = 0);
+         DSPLY ('Program created.');
+       Else;
+         DSPLY ('Program failed to create.');
+       Endif;
+       
        DSPLY ('Program end');
        
        *InLR = *On;
@@ -110,6 +120,9 @@
                BarrySQL_WriteTemp('        Dcl-S env Int(10);');
                BarrySQL_WriteTemp('        Dcl-S hdl Int(10);');
                BarrySQL_WriteTemp('        Dcl-S rlen Int(10);');
+               BarrySQL_WriteTemp('        Dcl-S usr char(10) inz(*user);');
+               BarrySQL_WriteTemp('        Dcl-S sqltrue like(SQLINTEGER_t) '
+                                  + 'inz(SQL_TRUE);');
                BarrySQL_WriteTemp('        Dcl-S stmt Int(10) Dim(10) Inz(0);');
              Endif;
              If (gSQLLine.Pieces(2) = 'HEADERS');
@@ -120,8 +133,10 @@
              BarrySQL_WriteTemp('        SQLAllocConnect(env:%Addr(hdl));');
              BarrySQL_WriteTemp('        SQLConnect(hdl:'     
                                + '''' + gSQLLine.Pieces(2) + '''' + 
-                               ':SQL_NTS:0:SQL_NTS:0:SQL_NTS);');
-           When (gSQLLine.Pieces(1) = 'SELECT');
+                               ':SQL_NTS:usr:SQL_NTS:'''':SQL_NTS);');
+             BarrySQL_WriteTemp('        SQLSetConnectAttr(hdl:' + 
+                                'SQL_ATTR_DBC_SYS_NAMING:%Addr(sqltrue):0);');
+           When (gSQLLine.Pieces(1) = 'SELECT'); 
              gCurrentSQLStmt += 1;
              BarrySQL_WriteTemp('        SQLAllocStmt(hdl' + 
                                 ':%Addr(stmt(' + %Char(gCurrentSQLStmt)
@@ -132,12 +147,12 @@
            When (gSQLLine.Pieces(1) = 'FETCH');
              If (gSQLLine.Pieces(2) = 'INTO');
                BarrySQL_WriteTemp('        SQLFetch(stmt('
-                                  + %Char(gCurrentSQLStmt) + ');');
+                                  + %Char(gCurrentSQLStmt) + '));');
                
                lIndex = 3;
                Dow (gSQLLine.Pieces(lIndex) <> '');
-                 BarrySQL_WriteTemp('        SQLGetCol('
-                                  + %Char(gCurrentSQLStmt) + ':'
+                 BarrySQL_WriteTemp('        SQLGetCol(stmt('
+                                  + %Char(gCurrentSQLStmt) + '):'
                                   + %Char(lIndex - 2) + ':SQL_DEFAULT:'
                                   + '%Addr(' + gSQLLine.Pieces(lIndex) + '):'
                                   + '%Size(' + gSQLLine.Pieces(lIndex) + '):'
@@ -161,7 +176,7 @@
        //************************************
        
        Dcl-Proc BarrySQL_CreateTemp;
-         gOutFile.PathFile = %Trim(gIFS) + '.brysql' + x'00';
+         gOutFile.PathFile = %Trim(gIFS) + 'brysql' + x'00';
          gOutFile.OpenMode = 'w' + x'00';
          gOutFile.FilePtr  = OpenFile(%addr(gOutFile.PathFile)
                                      :%addr(gOutFile.OpenMode));

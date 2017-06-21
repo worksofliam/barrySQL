@@ -1,3 +1,7 @@
+       Dcl-Pr Cmd int(10) extproc('system');
+         cmdstring pointer value options(*string);
+       End-Pr;
+        
        Dcl-Pr printf Int(10) ExtProc('printf');
          format Pointer Value Options(*String);
        End-Pr;
