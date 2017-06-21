@@ -14,7 +14,7 @@
        Dcl-Ds gSQLLine Qualified;
          Data   Varchar(2048);
          SQL    Varchar(2048);
-         Pieces Varchar(32) Dim(10);
+         Pieces Varchar(32) Dim(32);
        End-Ds;
        
        Dcl-S gCurrentSQLStmt Int(3) Inz(0);
