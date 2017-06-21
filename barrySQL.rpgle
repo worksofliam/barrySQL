@@ -224,7 +224,7 @@
          DSPLY ('Output file created');
        End-Proc;
        
-       Dcl-Proc BarrySQL_WriteTemp; 
+       Dcl-Proc BarrySQL_WriteTemp;
          Dcl-Pi *N;
            pValue Char(132) Value;
          END-PI;
