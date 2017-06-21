@@ -58,17 +58,21 @@
          CloseFile(gInputFile.FilePtr);
          BarrySQL_CloseTemp();
          
+         If (gCurrentSQLStmt > 0);
+           DSPLY (%Char(gCurrentSQLStmt) + ' cursor(s) left open!');
+         Endif;
+         
+         gCmdRes = Cmd('CRTBNDRPG PGM(' + %Trim(gObj) + ') SRCSTMF('''
+           + %Trim(gIFS) + 'brysql'') OPTION(*EVENTF) DBGVIEW(*SOURCE)');
+           
+         If (gCmdRes = 0);
+           DSPLY ('Program created.');
+         Else;
+           DSPLY ('Program failed to create.');
+         Endif;
+         
        Else;
          DSPLY ('Unable to open file.');
-       Endif;
-       
-       gCmdRes = Cmd('CRTBNDRPG PGM(' + %Trim(gObj) + ') SRCSTMF('''
-         + %Trim(gIFS) + 'brysql'') OPTION(*EVENTF) DBGVIEW(*SOURCE)');
-         
-       If (gCmdRes = 0);
-         DSPLY ('Program created.');
-       Else;
-         DSPLY ('Program failed to create.');
        Endif;
        
        DSPLY ('Program end');
@@ -115,8 +119,7 @@
          BarrySQL_CreatePieces();
          
          Select;
-           When (gSQLLine.Pieces(1) = 'DEFINE'); 
-             DSPLY ('Here: ' + gSQLLine.Pieces(2));
+           When (gSQLLine.Pieces(1) = 'DEFINE');
              If (gSQLLine.Pieces(2) = 'FIELDS');
                BarrySQL_WriteTemp('        Dcl-S env Int(10);');
                BarrySQL_WriteTemp('        Dcl-S hdl Int(10);');
@@ -141,7 +144,7 @@
              BarrySQL_WriteTemp('        SQLSetConnectAttr(hdl:' + 
                                 'SQL_ATTR_DBC_SYS_NAMING:%Addr(sqltrue):0);');
                                 
-           When (gSQLLine.Pieces(1) = 'SELECT'); 
+           When (gSQLLine.Pieces(1) = 'SELECT');
              gCurrentSQLStmt += 1;
              BarrySQL_WriteTemp('        SQLAllocStmt(hdl' + 
                                 ':%Addr(stmt(' + %Char(gCurrentSQLStmt)
@@ -149,6 +152,22 @@
              BarrySQL_WriteTemp('        sqlreturn = SQLExecDirect(' + 
                                 'stmt(' + %Char(gCurrentSQLStmt) + '):' +
                                 '''' + gSQLLine.SQL + ''':SQL_NTS);');
+                                
+           When (gSQLLine.Pieces(1) = 'UPDATE' OR
+                 gSQLLine.Pieces(1) = 'DELETE' OR
+                 gSQLLine.Pieces(1) = 'CREATE');
+             gCurrentSQLStmt += 1;
+             BarrySQL_WriteTemp('        SQLAllocStmt(hdl' + 
+                                ':%Addr(stmt(' + %Char(gCurrentSQLStmt)
+                                 + ')));');
+             BarrySQL_WriteTemp('        sqlreturn = SQLExecDirect(' + 
+                                'stmt(' + %Char(gCurrentSQLStmt) + '):' +
+                                '''' + gSQLLine.SQL + ''':SQL_NTS);');
+             BarrySQL_WriteTemp('        SQLFreeStmt('
+                               + 'stmt(' + %Char(gCurrentSQLStmt) + '):'
+                               + 'SQL_CLOSE);');
+             gCurrentSQLStmt -= 1;
+                               
                                 
            When (gSQLLine.Pieces(1) = 'FETCH');
              If (gSQLLine.Pieces(2) = 'INTO');
@@ -175,11 +194,22 @@
              BarrySQL_WriteTemp('        SQLFreeStmt('
                                + 'stmt(' + %Char(gCurrentSQLStmt) + '):'
                                + 'SQL_CLOSE);');
+             gCurrentSQLStmt -= 1;
                                
            When (gSQLLine.Pieces(1) = 'DISCONNECT');
              BarrySQL_WriteTemp('        SQLDisconnect(hdl);');
              BarrySQL_WriteTemp('        SQLFreeConnect(hdl);');
              BarrySQL_WriteTemp('        SQLFreeEnv(env);');
+             
+           When (gSQLLine.Pieces(1) = 'EXECUTE');
+             gCurrentSQLStmt += 1;
+             BarrySQL_WriteTemp('        SQLAllocStmt(hdl' + 
+                                ':%Addr(stmt(' + %Char(gCurrentSQLStmt)
+                                 + ')));');
+             BarrySQL_WriteTemp('        sqlreturn = SQLExecDirect(' + 
+                                'stmt(' + %Char(gCurrentSQLStmt) + '):' +
+                                gSQLLine.Pieces(2) + ':SQL_NTS);');
+             
          Endsl;
        End-Proc;
        
@@ -194,7 +224,7 @@
          DSPLY ('Output file created');
        End-Proc;
        
-       Dcl-Proc BarrySQL_WriteTemp;
+       Dcl-Proc BarrySQL_WriteTemp; 
          Dcl-Pi *N;
            pValue Char(132) Value;
          END-PI;
