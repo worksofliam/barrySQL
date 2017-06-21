@@ -13,6 +13,13 @@ RPGLE free precompiler for SQL (generates CLI)
 ### Functionality
 
 * **DEFINE**
+
+Both define statements are required in every module that uses BSQL.
+
+* * `HEADERS` is used to define the prototypes and constants for the DB2 CLI.
+
+* * `FIELDS` is used to define the required fields for the DB2 CLI. (e.g. env, conn, hdl, stmts)
+
 * **CONNECT**
 * **SELECT**
 * **UPDATE/DELETE/CREATE**
